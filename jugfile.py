@@ -3,6 +3,7 @@ import pandas as pd
 from mirror import mirror_all_files, build_link_structure, create_ena_file_map
 from links import build_links_sample
 from config import MIRROR_BASEDIR, USE_ASPERA
+import sys
 
 build_links_sample = TaskGenerator(build_links_sample)
 
@@ -13,7 +14,11 @@ def create_mirror(study_accession, target_directory):
     filetable = ena.expand_fastq_columns(filetable)
     mirror_all_files(filetable, MIRROR_BASEDIR, use_aspera=USE_ASPERA)
     if target_directory != '*':
-        build_link_structure(filetable, MIRROR_BASEDIR, target_directory, study_accession)
+        try:
+            build_link_structure(filetable, MIRROR_BASEDIR, target_directory, study_accession)
+        except IndexError:
+            print("Failed to create link structure for:", study_accession, file=sys.stderr)
+            raise
     return filetable
 
 @TaskGenerator
