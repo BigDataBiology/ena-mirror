@@ -84,30 +84,46 @@ def mirror_all_files(filetable, mirror_basedir, *, progress=True, use_aspera=Fal
         else:
             http_download_file(urlraw, ofile)
 
+
+def norm_path(p):
+    p = str(p)
+    if p.endswith('_1.fastq.gz'):
+        return pathlib.PurePath(p[:-len('_1.fastq.gz')]+'.pair.1.fq.gz')
+    if p.endswith('_2.fastq.gz'):
+        return pathlib.PurePath(p[:-len('_2.fastq.gz')]+'.pair.2.fq.gz')
+    if p.endswith('.fastq.gz'):
+        return pathlib.PurePath(p[:-len('.fastq.gz')] + '.single.fq.gz')
+    raise ValueError("Cannot normalize {}".format(p))
+
+
 def build_link_structure(filetable, mirror_basedir, data_basedir, sample_fname):
     data_basedir = pathlib.PurePath(data_basedir)
     makedirs(data_basedir, exist_ok=True)
+
     with open(data_basedir / sample_fname, 'w') as samplefile:
         for s in set(filetable.sample_accession):
-            makedirs(data_basedir / s, exist_ok=True)
             samplefile.write("{}\n".format(s))
-    p = mirror_path(mirror_basedir, filetable.ftp.iloc[0])
-    def norm_path(p):
-        p = str(p)
-        if p.endswith('_1.fastq.gz'):
-            return pathlib.PurePath(p[:-len('_1.fastq.gz')]+'.pair.1.fq.gz')
-        if p.endswith('_2.fastq.gz'):
-            return pathlib.PurePath(p[:-len('_2.fastq.gz')]+'.pair.2.fq.gz')
-        if p.endswith('.fastq.gz'):
-            return pathlib.PurePath(p[:-len('.fastq.gz')] + '.single.fq.gz')
-        raise ValueError("Cannot normalize {}".format(p))
+
+    prefix_fields = [ col for col in 
+        ('library_layout', 'library_strategy', 'library_source', 'library_selection')
+        if filetable[col].nunique() > 1
+    ] 
 
     n = len(filetable)
     for i in range(n):
         source = filetable.iloc[i]
         if type(source.ftp) == float and isnan(source.ftp):
             continue
-        target = data_basedir / source.sample_accession / norm_path(source.ftp).name
+
+        target = data_basedir
+
+        if prefix_fields:
+            target = target / "_".join( source[s] for s in prefix_fields ) 
+
+        target = target / source.sample_accession 
+        makedirs(target, exist_ok=True)
+        target = target / norm_path(source.ftp).name
+
         os.symlink(mirror_path(mirror_basedir, source.ftp), target)
 
 def create_ena_file_map(studies_tables, vol_map, MIRROR_BASEDIR):

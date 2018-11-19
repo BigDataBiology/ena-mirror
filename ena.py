@@ -64,6 +64,10 @@ def get_project_reads_table(accession, as_pandas_DataFrame=False):
                 'submitted_bytes',
                 'read_count',
                 'base_count',
+                'library_layout',
+                'library_strategy',
+                'library_source',
+                'library_selection',
                 ])
     url = '{base_url}?accession={accession}&&result=read_run&fields={fields}'.format(
                 base_url=ENA_FILEREPORT_URL,
