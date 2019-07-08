@@ -98,7 +98,7 @@ def expand_fastq_columns(filetable):
             'submitted_md5']
     split_cols = ['ftp', 'bytes', 'md5']
     expanded = {}
-    filetable = filetable[filetable['fastq_ftp'].astype(str).str.startswith('ftp')]
+    filetable = filetable[filetable['ftp'].astype(str).str.startswith('ftp')]
     for c in split_cols:
         col = filetable[c]
         if col.dtype == np.object_:
