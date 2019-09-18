@@ -1,0 +1,7 @@
+USE_ASPERA = False
+MIRROR_BASEDIR = 'data/'
+TARGET_BASEDIR = MIRROR_BASEDIR + 'metagenomes/'
+
+ASPERA_BINARY = 'ascp'
+ASPERA_KEY = 'MISSING'
+
