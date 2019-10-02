@@ -19,7 +19,6 @@ def mirror_path(mirror_basedir, ftp):
     return target_dir / p.name
 
 
-
 def md5sum_file(ifile):
     '''Computes MD5 sum of ifile'''
     import hashlib
@@ -32,27 +31,40 @@ def md5sum_file(ifile):
                 return m.hexdigest()
             m.update(data)
 
+
 def http_download_file(url, ofile):
     with closing(requests.get(url, stream=True)) as ifile, \
-                open(ofile, 'wb') as ofile:
+        open(ofile, 'wb') as ofile:
         for chunk in ifile.iter_content(8192):
             ofile.write(chunk)
+
+
+def wget_download_file(url, ofile):
+    '''Call wget on the command line to download `url` to `ofile`'''
+    import subprocess
+    cmdline = ['wget',
+               url,
+               '-O',
+               str(ofile)]
+    print('WGET_CMD', cmdline)
+    subprocess.run(cmdline, check=True)
+
 
 def aspera_download_file(aspera_url, ofile):
     '''Call ascp on the command line to download `aspera_url` to `ofile`'''
     import subprocess
-    cmdline = [
-            ASPERA_BINARY,
-            '-P33001', # Use special port
-            '-T', # No encryption
-            '-l', '300m',
-            '-i', ASPERA_KEY,
-            aspera_url,
-            str(ofile)]
+    cmdline = [ASPERA_BINARY,
+               '-P33001',  # Use special port
+               '-T',  # No encryption
+               '-l', '300m',
+               '-i', ASPERA_KEY,
+               aspera_url,
+               str(ofile)]
     print('ASPERA_CMD', cmdline)
     subprocess.run(cmdline, check=True)
 
-def mirror_all_files(filetable, mirror_basedir, *, progress=True, use_aspera=False):
+
+def mirror_all_files(filetable, mirror_basedir, *, progress=True, use='HTTP'):
     n = len(filetable)
     for i in range(n):
         if progress:
@@ -77,9 +89,11 @@ def mirror_all_files(filetable, mirror_basedir, *, progress=True, use_aspera=Fal
             else:
                 print("Correct output file exists. Skipping...")
                 continue
-        if use_aspera:
-            aspera_url = 'era-fasp@fasp.sra.ebi.ac.uk:'+url.path
+        if use == 'ASPERA':
+            aspera_url = 'era-fasp@fasp.sra.ebi.ac.uk:' + url.path
             aspera_download_file(aspera_url, ofile)
+        elif use == 'WGET':
+            wget_download_file(source.ftp, ofile)
         else:
             http_download_file(urlraw, ofile)
 
@@ -87,9 +101,9 @@ def mirror_all_files(filetable, mirror_basedir, *, progress=True, use_aspera=Fal
 def norm_path(p):
     p = str(p)
     if p.endswith('_1.fastq.gz'):
-        return pathlib.PurePath(p[:-len('_1.fastq.gz')]+'.pair.1.fq.gz')
+        return pathlib.PurePath(p[:-len('_1.fastq.gz')] + '.pair.1.fq.gz')
     if p.endswith('_2.fastq.gz'):
-        return pathlib.PurePath(p[:-len('_2.fastq.gz')]+'.pair.2.fq.gz')
+        return pathlib.PurePath(p[:-len('_2.fastq.gz')] + '.pair.2.fq.gz')
     if p.endswith('.fastq.gz'):
         return pathlib.PurePath(p[:-len('.fastq.gz')] + '.single.fq.gz')
     raise ValueError("Cannot normalize {}".format(p))
@@ -103,10 +117,12 @@ def build_link_structure(filetable, mirror_basedir, data_basedir, sample_fname):
         for s in set(filetable.sample_accession):
             samplefile.write("{}\n".format(s))
 
-    prefix_fields = [ col for col in
-        ('library_layout', 'library_strategy', 'library_source', 'library_selection')
-        if filetable[col].nunique() > 1
-    ]
+    prefix_fields = [col for col in
+                     ('library_layout',
+                      'library_strategy',
+                      'library_source',
+                      'library_selection')
+                     if filetable[col].nunique() > 1]
 
     n = len(filetable)
     for i in range(n):
@@ -117,13 +133,14 @@ def build_link_structure(filetable, mirror_basedir, data_basedir, sample_fname):
         target = data_basedir
 
         if prefix_fields:
-            target = target / "_".join( source[s] for s in prefix_fields )
+            target = target / "_".join(source[s] for s in prefix_fields)
 
         target = target / source.sample_accession
         makedirs(target, exist_ok=True)
         target = target / norm_path(source.ftp).name
 
         os.symlink(mirror_path(mirror_basedir, source.ftp), target)
+
 
 def create_ena_file_map(studies_tables, vol_map, MIRROR_BASEDIR):
     def annotate_link(p):
@@ -195,4 +212,3 @@ def create_ena_file_map(studies_tables, vol_map, MIRROR_BASEDIR):
                         fastq_single = path.join(MIRROR_BASEDIR, fastq_single)
 
                 out.write(f"{record.study_accession}\t{record.run_accession}\t{record.sample_accession}\t{record.experiment_accession}\t{fastq_1}\t{fastq_2}\t{fastq_single}\n")
-
