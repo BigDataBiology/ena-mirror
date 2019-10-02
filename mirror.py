@@ -49,6 +49,7 @@ def aspera_download_file(aspera_url, ofile):
             '-i', ASPERA_KEY,
             aspera_url,
             str(ofile)]
+    print('ASPERA_CMD', cmdline)
     subprocess.run(cmdline, check=True)
 
 def mirror_all_files(filetable, mirror_basedir, *, progress=True, use_aspera=False):
@@ -64,10 +65,8 @@ def mirror_all_files(filetable, mirror_basedir, *, progress=True, use_aspera=Fal
         url = urllib.parse.urlparse(urlraw)
         p = pathlib.PurePath(url.path)
         target_dir = mirror_basedir / p.parent.relative_to('/')
-
         makedirs(target_dir, exist_ok=True)
         ofile = target_dir / p.name
-
         if path.exists(ofile):
             if os.stat(ofile).st_size != int(source.bytes):
                 print("Existing output file has wrong size. Removing...")
@@ -104,10 +103,10 @@ def build_link_structure(filetable, mirror_basedir, data_basedir, sample_fname):
         for s in set(filetable.sample_accession):
             samplefile.write("{}\n".format(s))
 
-    prefix_fields = [ col for col in 
+    prefix_fields = [ col for col in
         ('library_layout', 'library_strategy', 'library_source', 'library_selection')
         if filetable[col].nunique() > 1
-    ] 
+    ]
 
     n = len(filetable)
     for i in range(n):
@@ -118,9 +117,9 @@ def build_link_structure(filetable, mirror_basedir, data_basedir, sample_fname):
         target = data_basedir
 
         if prefix_fields:
-            target = target / "_".join( source[s] for s in prefix_fields ) 
+            target = target / "_".join( source[s] for s in prefix_fields )
 
-        target = target / source.sample_accession 
+        target = target / source.sample_accession
         makedirs(target, exist_ok=True)
         target = target / norm_path(source.ftp).name
 
@@ -152,7 +151,7 @@ def create_ena_file_map(studies_tables, vol_map, MIRROR_BASEDIR):
         out.write("#study_accession\trun_accession\tsample_accession\texperiment_accession\tfastq_1\tfastq_2\tfastq_single\n")
         for study in studies_tables:
             data = bvalue(studies_tables[study])  ## bvalue because this is a Tasklet
-            if data is None:
+            if data is None or len(data) == 0:
                 print("We got no file information for", study, ". Incomplete/older jug internal state? Skipping", study)
                 continue
             annotations = data["ftp"].map(annotate_link)
