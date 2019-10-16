@@ -74,7 +74,7 @@ def mirror_all_files(filetable, mirror_basedir, *, progress=True, use='HTTP'):
             continue
 
         urlraw = 'http://' + source.ftp
-        url = urllib.parse.urlparse(urlraw)
+        url = urllib.parse.urlparse(urlraw, allow_fragments=False)
         p = pathlib.PurePath(url.path)
         target_dir = mirror_basedir / p.parent.relative_to('/')
         makedirs(target_dir, exist_ok=True)
