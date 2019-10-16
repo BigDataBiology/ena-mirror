@@ -77,7 +77,9 @@ def get_project_reads_table(accession, as_pandas_DataFrame=False):
     if as_pandas_DataFrame:
         import pandas as pd
         from six import StringIO
-        return pd.read_table(StringIO(data))
+        df = pd.read_table(StringIO(data))
+        df = df[~df['instrument_model'].isin(['MinION', 'GridION'])]
+        return df
     return data
 
 
