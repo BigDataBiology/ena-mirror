@@ -91,11 +91,39 @@ def mirror_all_files(filetable, mirror_basedir, *, progress=True, use='HTTP'):
                 continue
         if use == 'ASPERA':
             aspera_url = 'era-fasp@fasp.sra.ebi.ac.uk:' + url.path
-            aspera_download_file(aspera_url, ofile)
+            for attempt_number in range(3):
+                aspera_download_file(aspera_url, ofile)
+                if check_file(ofile, source):
+                    break
         elif use == 'WGET':
-            wget_download_file(source.ftp, ofile)
+            for attempt_number in range(3):
+                wget_download_file(source.ftp, ofile)
+                if check_file(ofile, source):
+                    break
         else:
             http_download_file(urlraw, ofile)
+
+
+def check_file(ofile, source):
+    print('Checking file...')
+    file_size = os.stat(ofile).st_size
+    print('File size: {0}'.format(file_size))
+    if file_size != int(source.bytes):
+        print("File has wrong size. {0} vs.{1}".format(file_size,
+                                                       source.bytes))
+        print('Removing..')
+        os.unlink(ofile)
+        return False
+    file_md5sum = md5sum_file(ofile)
+    print('File md5: {0}'.format(file_md5sum))
+    if file_md5sum != source.md5:
+        print("File has wrong md5. {0} vs.{1}".format(file_md5sum,
+                                                      source.md5))
+        print('Removing..')
+        os.unlink(ofile)
+        return False
+    print("Downloaded file OK...")
+    return True
 
 
 def norm_path(p):
