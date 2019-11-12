@@ -51,7 +51,7 @@ def wget_download_file(url, ofile):
     subprocess.run(cmdline, check=True)
 
 
-def aspera_download_file(aspera_url, ofile):
+def aspera_download_file_temp_dir(aspera_url, ofile):
     '''Call ascp on the command line to download `aspera_url` to `ofile`
      - Temporaily downloads to bork9 first and then copies to ofile due to
     data fragmentation issies encountered on scb2.'''
@@ -70,6 +70,20 @@ def aspera_download_file(aspera_url, ofile):
     subprocess.run(cmdline, check=True)
     if os.path.isfile(temp_download_name):
         shutil.move(temp_download_name, ofile)
+
+
+def aspera_download_file(aspera_url, ofile):
+    '''Call ascp on the command line to download `aspera_url` to `ofile`'''
+    import subprocess
+    cmdline = [ASPERA_BINARY,
+               '-P33001',  # Use special port
+               '-T',  # No encryption
+               '-l', '300m',
+               '-i', ASPERA_KEY,
+               aspera_url,
+               str(ofile)]
+    print('ASPERA_CMD', cmdline)
+    subprocess.run(cmdline, check=True)
 
 
 def mirror_all_files(study_accession, filetable, mirror_basedir, *, progress=True, use='HTTP'):
