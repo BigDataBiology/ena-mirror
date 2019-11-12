@@ -1,12 +1,13 @@
 import os
-from os import path, makedirs
-import pandas as pd
+import shutil
 import urllib
 import pathlib
 import requests
-from contextlib import closing
-from math import isnan
+import pandas as pd
 from jug import bvalue
+from math import isnan
+from contextlib import closing
+from os import path, makedirs
 from config import ASPERA_BINARY, ASPERA_KEY
 
 
@@ -51,17 +52,24 @@ def wget_download_file(url, ofile):
 
 
 def aspera_download_file(aspera_url, ofile):
-    '''Call ascp on the command line to download `aspera_url` to `ofile`'''
+    '''Call ascp on the command line to download `aspera_url` to `ofile`
+     - Temporaily downloads to bork9 first and then copies to ofile due to
+    data fragmentation issies encountered on scb2.'''
     import subprocess
+    temp_download_area = '/g/bork9/fullam/temp_downloads/'
+    temp_download_name = os.path.join(temp_download_area,
+                                      os.path.basename(ofile))
     cmdline = [ASPERA_BINARY,
                '-P33001',  # Use special port
                '-T',  # No encryption
                '-l', '300m',
                '-i', ASPERA_KEY,
                aspera_url,
-               str(ofile)]
+               str(temp_download_name)]
     print('ASPERA_CMD', cmdline)
     subprocess.run(cmdline, check=True)
+    if os.path.isfile(temp_download_name):
+        shutil.move(temp_download_name, ofile)
 
 
 def mirror_all_files(study_accession, filetable, mirror_basedir, *, progress=True, use='HTTP'):
