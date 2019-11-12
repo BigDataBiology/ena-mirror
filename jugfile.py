@@ -15,7 +15,7 @@ def create_mirror(study_accession, target_directory):
     filetable = ena.get_project_reads_table(study_accession,
                                             as_pandas_DataFrame=True)
     filetable = ena.expand_fastq_columns(filetable)
-    mirror_all_files(filetable, MIRROR_BASEDIR, use=DL_METHOD)
+    mirror_all_files(study_accession, filetable, MIRROR_BASEDIR, use=DL_METHOD)
     if target_directory != '*':
         try:
             build_link_structure(filetable,
@@ -36,7 +36,7 @@ def mirror_sample(sample_accession):
     filetable = ena.get_project_reads_table(sample_accession,
                                             as_pandas_DataFrame=True)
     filetable = ena.expand_fastq_columns(filetable)
-    mirror_all_files(filetable, MIRROR_BASEDIR, use=DL_METHOD)
+    mirror_all_files(study_accession, filetable, MIRROR_BASEDIR, use=DL_METHOD)
     return filetable
 
 

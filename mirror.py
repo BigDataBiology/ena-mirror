@@ -64,11 +64,11 @@ def aspera_download_file(aspera_url, ofile):
     subprocess.run(cmdline, check=True)
 
 
-def mirror_all_files(filetable, mirror_basedir, *, progress=True, use='HTTP'):
+def mirror_all_files(study_accession, filetable, mirror_basedir, *, progress=True, use='HTTP'):
     n = len(filetable)
     for i in range(n):
         if progress:
-            print("Processing file {} of {}.".format(i + 1, n))
+            print("Processing file {} of {}. Study: {}".format(i + 1, n, study_accession))
         source = filetable.iloc[i]
         if type(source.ftp) == float and isnan(source.ftp):
             continue
@@ -134,6 +134,8 @@ def norm_path(p):
         return pathlib.PurePath(p[:-len('_2.fastq.gz')] + '.pair.2.fq.gz')
     if p.endswith('.fastq.gz'):
         return pathlib.PurePath(p[:-len('.fastq.gz')] + '.single.fq.gz')
+    # if p.endswith('.fq.gz'):
+    #     return pathlib.PurePath(p[:-len('.fastq.gz')] + '.single.fq.gz')
     raise ValueError("Cannot normalize {}".format(p))
 
 
@@ -167,8 +169,11 @@ def build_link_structure(filetable, mirror_basedir, data_basedir, sample_fname):
         makedirs(target, exist_ok=True)
         target = target / norm_path(source.ftp).name
 
-        os.symlink(mirror_path(mirror_basedir, source.ftp), target)
-
+        try:
+            os.symlink(mirror_path(mirror_basedir, source.ftp), target)
+        except FileExistsError as e:
+            os.unlink(target)
+            os.symlink(mirror_path(mirror_basedir, source.ftp), target)
 
 def create_ena_file_map(studies_tables, vol_map, MIRROR_BASEDIR):
     def annotate_link(p):
@@ -186,10 +191,16 @@ def create_ena_file_map(studies_tables, vol_map, MIRROR_BASEDIR):
         p = drop_hostname(p)
         if p.endswith('_1.fastq.gz'):
             return ("fastq_1", p)
+        if p.endswith('R1.fastq.gz'):
+            return ("fastq_1", p)
         if p.endswith('_2.fastq.gz'):
+            return ("fastq_2", p)
+        if p.endswith('R2.fastq.gz'):
             return ("fastq_2", p)
         if p.endswith('.fastq.gz'):
             return ("fastq_single", p)
+        #else:
+        #    return ("fastq_single", p)
         raise ValueError("Cannot annotate {}".format(p))
 
     with open(path.join(MIRROR_BASEDIR, vol_map), 'w') as out:
