@@ -67,6 +67,7 @@ def aspera_download_file_temp_dir(aspera_url, ofile):
                aspera_url,
                str(temp_download_name)]
     print('ASPERA_CMD', cmdline)
+    print('DESTINATION: ', ofile)
     subprocess.run(cmdline, check=True)
     if os.path.isfile(temp_download_name):
         shutil.move(temp_download_name, ofile)
