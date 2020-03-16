@@ -124,7 +124,10 @@ def mirror_all_files(study_accession, filetable, mirror_basedir, *, progress=Tru
                 if check_file(ofile, source):
                     break
         else:
-            http_download_file(urlraw, ofile)
+	    for attempt_number in range(3):
+                http_download_file(urlraw, ofile)
+                if check_file(ofile, source):
+                    break
 
 
 def check_file(ofile, source):
@@ -157,8 +160,8 @@ def norm_path(p):
         return pathlib.PurePath(p[:-len('_2.fastq.gz')] + '.pair.2.fq.gz')
     if p.endswith('.fastq.gz'):
         return pathlib.PurePath(p[:-len('.fastq.gz')] + '.single.fq.gz')
-    # if p.endswith('.fq.gz'):
-    #     return pathlib.PurePath(p[:-len('.fastq.gz')] + '.single.fq.gz')
+    # if p.endswith('.fq1.gz'):
+    #     return pathlib.PurePath(p[:-len('.fq1.gz')] + '.single.fq.gz')
     raise ValueError("Cannot normalize {}".format(p))
 
 
@@ -222,8 +225,8 @@ def create_ena_file_map(studies_tables, vol_map, MIRROR_BASEDIR):
             return ("fastq_2", p)
         if p.endswith('.fastq.gz'):
             return ("fastq_single", p)
-        #else:
-        #    return ("fastq_single", p)
+        # else:
+        #     return ("fastq_single", p)
         raise ValueError("Cannot annotate {}".format(p))
 
     with open(path.join(MIRROR_BASEDIR, vol_map), 'w') as out:
