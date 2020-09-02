@@ -1,7 +1,7 @@
 import requests
 ENA_BASE_URL = 'http://www.ebi.ac.uk/ena/'
-ENA_DATA_VIEW_URL = ENA_BASE_URL + 'data/view/'
-ENA_FILEREPORT_URL = ENA_BASE_URL + 'data/warehouse/filereport'
+ENA_DATA_VIEW_URL = ENA_BASE_URL + 'api/xml/'
+ENA_FILEREPORT_URL = ENA_BASE_URL + 'portal/api/filereport'
 
 def parse_sample_meta(data):
     import xml.etree.ElementTree as ET
