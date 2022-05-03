@@ -131,7 +131,7 @@ def mirror_all_files(study_accession, filetable, mirror_basedir, *, progress=Tru
                 if check_file(ofile, source):
                     break
         else:
-	    for attempt_number in range(3):
+            for attempt_number in range(3):
                 http_download_file(urlraw, ofile)
                 if check_file(ofile, source):
                     break
