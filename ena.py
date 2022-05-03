@@ -1,6 +1,7 @@
 import requests
-ENA_BASE_URL = 'http://www.ebi.ac.uk/ena/'
+ENA_BASE_URL = 'https://www.ebi.ac.uk/ena/'
 ENA_DATA_VIEW_URL = ENA_BASE_URL + 'api/xml/'
+ENA_DATA_VIEW_XML_URL = ENA_BASE_URL + 'browser/api/xml/'
 ENA_FILEREPORT_URL = ENA_BASE_URL + 'portal/api/filereport'
 
 def parse_sample_meta(data):
@@ -32,7 +33,7 @@ def parse_sample_meta(data):
     return sample_meta
 
 def get_sample_xml(sample):
-    return requests.get("{}{}&display=xml".format(ENA_DATA_VIEW_URL, sample)).text
+    return requests.get(ENA_DATA_VIEW_XML_URL + sample).text
 
 def get_project_reads_table(accession, as_pandas_DataFrame=False):
     '''Returns a TSV table with all reads for a given project
