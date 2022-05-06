@@ -36,7 +36,7 @@ def mirror_sample(sample_accession):
     filetable = ena.get_project_reads_table(sample_accession,
                                             as_pandas_DataFrame=True)
     filetable = ena.expand_fastq_columns(filetable)
-    mirror_all_files(study_accession, filetable, MIRROR_BASEDIR, use=DL_METHOD)
+    mirror_all_files(None, filetable, MIRROR_BASEDIR, use=DL_METHOD)
     return filetable
 
 
